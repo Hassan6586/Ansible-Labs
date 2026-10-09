@@ -1,0 +1,3 @@
+---
+# Host variables beat group variables, so web1 gets 500, not 200.
+max_clients: 500

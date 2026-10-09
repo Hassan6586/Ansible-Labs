@@ -1,0 +1,18 @@
+---
+# Removes Apache so port 80 is free for later labs.
+- name: Remove the Lab 04 web server
+  hosts: local
+  become: true
+  tasks:
+    - name: Stop Apache
+      ansible.builtin.service:
+        name: apache2
+        state: stopped
+      failed_when: false
+
+    - name: Remove the apache2 package
+      ansible.builtin.apt:
+        name: apache2
+        state: absent
+        purge: true
+        autoremove: true

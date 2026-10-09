@@ -1,0 +1,48 @@
+---
+- name: Fact-driven decisions
+  hosts: local
+  gather_facts: true
+
+  vars:
+    min_ram_mb: 2048
+
+  tasks:
+    - name: Show a few useful facts
+      ansible.builtin.debug:
+        msg:
+          - "Hostname: {{ ansible_facts['hostname'] }}"
+          - "OS: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }} ({{ ansible_facts['os_family'] }} family)"
+          - "CPUs: {{ ansible_facts['processor_vcpus'] }}"
+          - "RAM: {{ ansible_facts['memtotal_mb'] }} MB"
+          - "Default IPv4: {{ ansible_facts['default_ipv4']['address'] | default('none') }}"
+
+    - name: Warn when RAM is low
+      ansible.builtin.debug:
+        msg: "WARNING: only {{ ansible_facts['memtotal_mb'] }} MB of RAM (below {{ min_ram_mb }} MB)"
+      when: ansible_facts['memtotal_mb'] < min_ram_mb
+
+    - name: Report when RAM is fine
+      ansible.builtin.debug:
+        msg: "RAM looks fine: {{ ansible_facts['memtotal_mb'] }} MB"
+      when: ansible_facts['memtotal_mb'] >= min_ram_mb
+
+    - name: Debian/Ubuntu-only task
+      ansible.builtin.debug:
+        msg: "This is a Debian-family system, so we would use apt here."
+      when: ansible_facts['os_family'] == "Debian"
+
+    - name: RedHat-only task (skipped on Ubuntu)
+      ansible.builtin.debug:
+        msg: "This is a RedHat-family system, so we would use dnf here."
+      when: ansible_facts['os_family'] == "RedHat"
+
+    - name: Save a system report built from facts
+      ansible.builtin.copy:
+        dest: /tmp/lab05-system-report.txt
+        mode: "0644"
+        content: |
+          System report for {{ ansible_facts['hostname'] }}
+          OS:     {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}
+          Kernel: {{ ansible_facts['kernel'] }}
+          CPUs:   {{ ansible_facts['processor_vcpus'] }}
+          RAM:    {{ ansible_facts['memtotal_mb'] }} MB

@@ -1,0 +1,30 @@
+---
+- name: Render configuration files from Jinja2 templates
+  hosts: local
+  gather_facts: true
+  vars_files:
+    - vars.yml
+  vars:
+    output_dir: /tmp/lab15
+
+  tasks:
+    - name: Create the output folder
+      ansible.builtin.file:
+        path: "{{ output_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Render every template
+      ansible.builtin.template:
+        src: "{{ item }}.j2"
+        dest: "{{ output_dir }}/{{ item }}"
+        mode: "0644"
+      loop:
+        - app.conf
+        - nginx-upstream.conf
+        - features.json
+        - report.txt
+
+    - name: Show where the files are
+      ansible.builtin.debug:
+        msg: "Rendered 4 files into {{ output_dir }}. Look at them with: cat {{ output_dir }}/*"

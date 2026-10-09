@@ -1,0 +1,34 @@
+---
+- name: Deploy a Deployment and Service from manifest files
+  hosts: local
+  gather_facts: false
+  tasks:
+    - name: Apply the Deployment
+      kubernetes.core.k8s:
+        state: present
+        src: manifests/web-deployment.yml
+        wait: true
+        wait_condition:
+          type: Available
+          status: "True"
+        wait_timeout: 180
+
+    - name: Apply the Service
+      kubernetes.core.k8s:
+        state: present
+        src: manifests/web-service.yml
+
+    - name: List the Pods that belong to the app
+      kubernetes.core.k8s_info:
+        kind: Pod
+        namespace: ansible-lab
+        label_selectors:
+          - app=web
+      register: web_pods
+
+    - name: Show each Pod's name and phase
+      ansible.builtin.debug:
+        msg: "{{ item.metadata.name }}: {{ item.status.phase }}"
+      loop: "{{ web_pods.resources }}"
+      loop_control:
+        label: "{{ item.metadata.name }}"

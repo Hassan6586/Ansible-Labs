@@ -1,0 +1,4 @@
+# Never commit vault passwords or decrypted secrets
+.vault_pass
+*.vault_pass
+vault_files/database_secrets.yml.decrypted

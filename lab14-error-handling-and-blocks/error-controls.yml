@@ -1,0 +1,59 @@
+---
+# The other error-handling tools, one per task.
+- name: Error handling toolbox
+  hosts: local
+  gather_facts: false
+
+  vars:
+    disk_usage_limit: 90
+    service_port: 8099            # nothing listens here, so the retry demo fails on purpose
+
+  tasks:
+    - name: 1. Validate inputs before doing anything (assert)
+      ansible.builtin.assert:
+        that:
+          - disk_usage_limit | int > 0
+          - disk_usage_limit | int <= 100
+        fail_msg: "disk_usage_limit must be between 1 and 100"
+        success_msg: "Inputs look good"
+
+    - name: 2. Keep going even if this fails (ignore_errors)
+      ansible.builtin.command: ls /path/that/does/not/exist
+      register: missing
+      changed_when: false
+      ignore_errors: true
+
+    - name: Show that the play continued
+      ansible.builtin.debug:
+        msg: "The ls failed with rc={{ missing.rc }}, but the play carried on."
+
+    - name: 3. Decide yourself what counts as failure (failed_when)
+      ansible.builtin.command: df --output=pcent /
+      register: disk
+      changed_when: false
+      failed_when: (disk.stdout_lines[-1] | trim | replace('%', '') | int) > disk_usage_limit
+
+    - name: Show disk usage
+      ansible.builtin.debug:
+        msg: "Root disk is {{ disk.stdout_lines[-1] | trim }} full (limit {{ disk_usage_limit }}%)"
+
+    - name: 4. A command that always "fails" but is fine for us (grep returns 1 when nothing matches)
+      ansible.builtin.command: grep -c "no-such-user" /etc/passwd
+      register: grep_result
+      changed_when: false
+      failed_when: grep_result.rc not in [0, 1]
+
+    - name: 5. Retry until something works (retries / until)
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ service_port }}/health"
+        timeout: 2
+      register: health
+      retries: 3
+      delay: 2
+      until: health.status == 200
+      ignore_errors: true          # so the lab continues; in real life you'd let this fail
+
+    - name: Show how many attempts were made
+      ansible.builtin.debug:
+        msg: "Gave up after {{ health.attempts }} attempts (nothing listens on port {{ service_port }})"
+      when: health is failed

@@ -1,0 +1,10 @@
+---
+- name: Remove the Lab 19 output
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Delete /tmp/lab19
+      ansible.builtin.file:
+        path: /tmp/lab19
+        state: absent

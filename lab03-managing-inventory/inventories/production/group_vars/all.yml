@@ -1,0 +1,4 @@
+---
+# Applies to every host in this inventory (lowest priority of the group files).
+ntp_server: time.google.com
+monitoring_enabled: false

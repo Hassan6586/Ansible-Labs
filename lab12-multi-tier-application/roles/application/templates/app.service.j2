@@ -1,0 +1,16 @@
+# {{ ansible_managed }}
+[Unit]
+Description={{ application_name }} (Lab 12)
+After=network.target redis-server.service
+
+[Service]
+User={{ application_user }}
+Environment=APP_NAME={{ application_name }}
+Environment=APP_PORT={{ application_port }}
+Environment=REDIS_HOST={{ application_redis_host }}
+Environment=REDIS_PORT={{ application_redis_port }}
+ExecStart=/usr/bin/python3 {{ application_dir }}/app.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

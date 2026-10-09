@@ -1,0 +1,22 @@
+---
+- name: Use secrets from Ansible Vault
+  hosts: local
+  gather_facts: false
+
+  vars_files:
+    - vault_files/database_secrets.yml     # encrypted file; Ansible decrypts it in memory
+
+  tasks:
+    - name: Show that we can read the username (never print passwords!)
+      ansible.builtin.debug:
+        msg: "Connecting to the database as {{ db_username }}"
+
+    - name: Write a config file that only the owner can read
+      ansible.builtin.copy:
+        dest: /tmp/lab06-secure_config.conf
+        mode: "0600"
+        content: |
+          DB_USER={{ db_username }}
+          DB_PASS={{ db_password }}
+          API_TOKEN={{ api_token }}
+      no_log: true      # hide this task's details (they contain secrets) from the output and logs

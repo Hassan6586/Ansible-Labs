@@ -1,0 +1,25 @@
+---
+# Optional: Azure virtual machines. Copy this file into inventories/ to use it:
+#   ansible-galaxy collection install azure.azcollection
+#   pip install -r ~/.ansible/collections/ansible_collections/azure/azcollection/requirements.txt
+#   az login
+#   cp optional/azure_rm.yml inventories/60-azure_rm.yml
+# The file name MUST end in azure_rm.yml (or azure_rm.yaml).
+plugin: azure.azcollection.azure_rm
+auth_source: auto            # uses "az login", environment variables or a managed identity
+
+conditional_groups:
+  azure: true
+
+keyed_groups:
+  - prefix: env
+    key: tags.Environment | default('none')
+  - prefix: azure_loc
+    key: location
+
+hostvar_expressions:
+  ansible_host: (public_ipv4_addresses + private_ipv4_addresses) | first
+  cloud_provider: "'azure'"
+  env: tags.Environment | default('none')
+  region: location
+  instance_size: virtual_machine_size

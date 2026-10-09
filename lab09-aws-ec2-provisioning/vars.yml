@@ -1,0 +1,20 @@
+---
+# Change these before you run the lab.
+aws_region: us-east-1
+instance_type: t3.micro              # free-tier eligible in most accounts; check yours
+instance_name: lab09-instance
+key_name: lab09-key
+key_file: "{{ lookup('ansible.builtin.env', 'HOME') }}/.ssh/lab09-key.pem"
+security_group_name: lab09-sg
+
+# Only this IP range may SSH in. Find yours with: curl -s https://checkip.amazonaws.com
+# then write it as x.x.x.x/32
+my_ip_cidr: "REPLACE_ME/32"
+
+# Latest Amazon Linux 2023 image, looked up from AWS's public SSM parameter
+ami_ssm_parameter: /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
+
+common_tags:
+  Environment: lab
+  Project: ansible-labs
+  ManagedBy: ansible

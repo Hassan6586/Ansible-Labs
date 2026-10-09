@@ -1,0 +1,22 @@
+---
+# Included once per environment by loops.yml. The current environment is in env_name.
+- name: "Create the environment folder: {{ env_name }}"
+  ansible.builtin.file:
+    path: "{{ base_dir }}/envs/{{ env_name }}"
+    state: directory
+    mode: "0755"
+  tags: [include]
+
+- name: "Write the settings file for {{ env_name }}"
+  ansible.builtin.copy:
+    dest: "{{ base_dir }}/envs/{{ env_name }}/settings.env"
+    content: |
+      ENVIRONMENT={{ env_name }}
+      DEBUG={{ 'true' if env_name == 'dev' else 'false' }}
+    mode: "0644"
+  tags: [include]
+
+- name: "Confirm the environment is ready: {{ env_name }}"
+  ansible.builtin.debug:
+    msg: "Environment {{ env_name }} is set up"
+  tags: [include]

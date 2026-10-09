@@ -1,0 +1,18 @@
+---
+# The playbook AWX runs in this lab. AWX pulls it from your Git repository.
+- name: Hello from AWX
+  hosts: all
+  gather_facts: true
+  vars:
+    greeting: "Hello from AWX"
+  tasks:
+    - name: Say hello
+      ansible.builtin.debug:
+        msg: "{{ greeting }}! This job ran on {{ inventory_hostname }} ({{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }})."
+
+    - name: Show the variables AWX passed in
+      ansible.builtin.debug:
+        msg:
+          - "Job ID: {{ awx_job_id | default('not running in AWX') }}"
+          - "Launched by: {{ awx_user_name | default('unknown') }}"
+          - "Template: {{ awx_job_template_name | default('none') }}"

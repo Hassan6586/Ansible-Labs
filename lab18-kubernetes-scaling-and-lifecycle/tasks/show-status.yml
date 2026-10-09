@@ -1,0 +1,27 @@
+---
+# Shared by every playbook in this lab: print image, replicas and revision.
+- name: Read the Deployment
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    name: "{{ app_name }}"
+    namespace: "{{ k8s_namespace }}"
+  register: deploy_info
+
+- name: Read its pods
+  kubernetes.core.k8s_info:
+    kind: Pod
+    namespace: "{{ k8s_namespace }}"
+    label_selectors:
+      - "app={{ app_name }}"
+  register: pod_info
+
+- name: Summary
+  vars:
+    d: "{{ deploy_info.resources[0] }}"
+  ansible.builtin.debug:
+    msg:
+      - "Image:     {{ d.spec.template.spec.containers[0].image }}"
+      - "Replicas:  {{ d.status.readyReplicas | default(0) }}/{{ d.spec.replicas }} ready"
+      - "Revision:  {{ d.metadata.annotations['deployment.kubernetes.io/revision'] }}"
+      - "Pods:      {{ pod_info.resources | map(attribute='metadata.name') | sort | join(', ') }}"

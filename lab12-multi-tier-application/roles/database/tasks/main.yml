@@ -1,0 +1,27 @@
+---
+- name: Install Redis
+  ansible.builtin.apt:
+    name: redis-server
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Configure Redis settings
+  ansible.builtin.lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: "^{{ item.key }}\\s"   # active lines only; if missing, the line is added at the end
+    line: "{{ item.key }} {{ item.value }}"
+  loop:
+    - { key: bind, value: "{{ database_bind_address }}" }
+    - { key: port, value: "{{ database_port }}" }
+    - { key: maxmemory, value: "{{ database_maxmemory }}" }
+    - { key: maxmemory-policy, value: allkeys-lru }
+  loop_control:
+    label: "{{ item.key }}"
+  notify: Restart Redis
+
+- name: Make sure Redis is running and starts on boot
+  ansible.builtin.service:
+    name: redis-server
+    state: started
+    enabled: true

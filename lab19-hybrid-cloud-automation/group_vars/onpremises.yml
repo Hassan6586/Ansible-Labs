@@ -1,0 +1,5 @@
+---
+location: Karachi data centre
+provider: on-premises (VMware)
+backup_target: /mnt/nas/backups
+log_shipping: syslog

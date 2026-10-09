@@ -1,0 +1,34 @@
+---
+# Read-only checks that report the hardening state. Changes nothing.
+- name: Audit the hardening baseline
+  hosts: local
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Read the effective SSH settings
+      ansible.builtin.command: sshd -T
+      register: sshd_effective
+      changed_when: false
+
+    - name: Read the firewall status
+      ansible.builtin.command: ufw status verbose
+      register: ufw_status
+      changed_when: false
+
+    - name: Read fail2ban's SSH jail
+      ansible.builtin.command: fail2ban-client status sshd
+      register: f2b
+      changed_when: false
+      failed_when: false
+
+    - name: Check the results
+      ansible.builtin.assert:
+        that:
+          - "'permitrootlogin no' in sshd_effective.stdout"
+          - "'maxauthtries 3' in sshd_effective.stdout"
+          - "'x11forwarding no' in sshd_effective.stdout"
+          - "'Status: active' in ufw_status.stdout"
+          - "'Default: deny (incoming)' in ufw_status.stdout"
+          - f2b.rc == 0
+        success_msg: "All hardening checks passed ✅"
+        fail_msg: "Some hardening checks failed ❌ (see the task output above)"

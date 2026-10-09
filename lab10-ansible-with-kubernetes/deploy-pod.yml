@@ -1,0 +1,30 @@
+---
+- name: Create a namespace and a Pod with Ansible
+  hosts: local
+  gather_facts: false
+  tasks:
+    - name: Create the namespace
+      kubernetes.core.k8s:
+        api_version: v1
+        kind: Namespace
+        name: ansible-lab
+        state: present
+
+    - name: Deploy an nginx Pod (definition written inline)
+      kubernetes.core.k8s:
+        state: present
+        wait: true                      # wait until the Pod is Ready
+        definition:
+          apiVersion: v1
+          kind: Pod
+          metadata:
+            name: nginx-app-pod
+            namespace: ansible-lab
+            labels:
+              app: nginx-pod
+          spec:
+            containers:
+              - name: nginx
+                image: nginx:1.27-alpine
+                ports:
+                  - containerPort: 80

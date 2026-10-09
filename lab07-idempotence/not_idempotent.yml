@@ -1,0 +1,11 @@
+---
+# ❌ The WRONG way: every run changes something and the file keeps growing.
+- name: Not idempotent
+  hosts: local
+  gather_facts: false
+  tasks:
+    - name: Append a line with a shell redirect
+      ansible.builtin.shell: echo "app_mode=debug" >> /tmp/lab07_bad.conf  # noqa: no-changed-when
+
+    - name: Create a folder with a command
+      ansible.builtin.command: mkdir -p /tmp/lab07_bad_dir  # noqa: no-changed-when command-instead-of-module

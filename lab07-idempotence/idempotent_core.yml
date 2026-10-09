@@ -1,0 +1,39 @@
+---
+# ✅ The RIGHT way: describe the end state; Ansible changes things only when needed.
+- name: Idempotent core playbook
+  hosts: local
+  gather_facts: false
+  tasks:
+    - name: Ensure the folder exists
+      ansible.builtin.file:
+        path: /tmp/lab07_good_dir
+        state: directory
+        mode: "0755"
+
+    - name: Ensure the config line is present exactly once
+      ansible.builtin.lineinfile:
+        path: /tmp/lab07_good.conf
+        line: app_mode=debug
+        create: true
+        mode: "0644"
+
+    - name: Ensure a setting has the right value (replaces it if it differs)
+      ansible.builtin.lineinfile:
+        path: /tmp/lab07_good.conf
+        regexp: '^log_level='
+        line: log_level=info
+
+    # (community.general.archive could do this too; here we show how 'creates' makes any command idempotent)
+    - name: Run a command only if its result doesn't exist yet
+      ansible.builtin.command:  # noqa: command-instead-of-module
+        cmd: tar -czf /tmp/lab07_backup.tar.gz -C /tmp lab07_good.conf
+        creates: /tmp/lab07_backup.tar.gz
+
+    - name: Read-only command that never changes anything
+      ansible.builtin.command: cat /tmp/lab07_good.conf
+      register: conf
+      changed_when: false
+
+    - name: Show the file
+      ansible.builtin.debug:
+        var: conf.stdout_lines

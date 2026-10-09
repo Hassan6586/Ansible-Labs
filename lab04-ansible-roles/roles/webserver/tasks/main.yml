@@ -1,0 +1,22 @@
+---
+- name: Install the web server package
+  ansible.builtin.apt:
+    name: "{{ webserver_package }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Deploy the home page from a template
+  ansible.builtin.template:
+    src: index.html.j2
+    dest: /var/www/html/index.html
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart web server
+
+- name: Make sure the web server is running and starts on boot
+  ansible.builtin.service:
+    name: "{{ webserver_service }}"
+    state: started
+    enabled: true

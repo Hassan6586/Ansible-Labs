@@ -1,0 +1,6 @@
+---
+# Default values for the role. Override them in the playbook, group_vars or with -e.
+webserver_package: apache2
+webserver_service: apache2
+webserver_page_title: "Configured by Ansible"
+webserver_owner: "Hassan's DevOps Lab"

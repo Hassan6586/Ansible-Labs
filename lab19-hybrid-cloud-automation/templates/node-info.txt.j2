@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+Host:          {{ inventory_hostname }}
+Role:          {{ role }}
+Location:      {{ location }}
+Provider:      {{ provider }}
+Private IP:    {{ private_ip }}
+Backups go to: {{ backup_target }}
+Logs go to:    {{ log_shipping }}
+NTP server:    {{ ntp_server }}

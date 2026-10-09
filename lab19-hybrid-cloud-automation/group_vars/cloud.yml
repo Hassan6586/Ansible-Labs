@@ -1,0 +1,5 @@
+---
+location: AWS us-east-1
+provider: aws
+backup_target: s3://acme-backups
+log_shipping: cloudwatch

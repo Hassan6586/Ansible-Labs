@@ -1,0 +1,131 @@
+---
+# Lab 16: Every common loop pattern in one playbook.
+# Run everything:         ansible-playbook loops.yml
+# Run only some parts:    ansible-playbook loops.yml --tags basics,dicts
+- name: Loop-driven provisioning
+  hosts: local
+  gather_facts: false
+  vars:
+    base_dir: /tmp/lab16
+    app_folders:
+      - logs
+      - data
+      - config
+    app_users:
+      - { name: appuser1, shell: /bin/bash, groups: [] }
+      - { name: appuser2, shell: /bin/sh, groups: [] }
+      - { name: deployer, shell: /bin/bash, groups: [sudo] }
+    app_settings:
+      max_connections: 100
+      timeout_seconds: 30
+      cache_enabled: true
+    environments:
+      - dev
+      - staging
+
+  tasks:
+    - name: 1. Loop over a simple list
+      ansible.builtin.file:
+        path: "{{ base_dir }}/{{ item }}"
+        state: directory
+        mode: "0755"
+      loop: "{{ app_folders }}"
+      tags: [basics]
+
+    - name: 2. Loop over a list of dictionaries (one user per item)
+      ansible.builtin.user:
+        name: "{{ item.name }}"
+        shell: "{{ item.shell }}"
+        groups: "{{ item.groups }}"
+        append: true
+        create_home: true
+      loop: "{{ app_users }}"
+      loop_control:
+        label: "{{ item.name }}"      # print only the name, not the whole dict
+      become: true
+      tags: [users]
+
+    - name: 3. Loop over a dictionary with dict2items
+      ansible.builtin.lineinfile:
+        path: "{{ base_dir }}/config/app.ini"
+        regexp: "^{{ item.key }}="
+        line: "{{ item.key }}={{ item.value }}"
+        create: true
+        mode: "0644"
+      loop: "{{ app_settings | dict2items }}"
+      loop_control:
+        label: "{{ item.key }}"
+      tags: [dicts]
+
+    - name: 4. Know where you are in the loop (index_var, extended)
+      ansible.builtin.debug:
+        msg: "Item {{ idx + 1 }} of {{ ansible_loop.length }}: {{ item }}{{ ' (last one)' if ansible_loop.last else '' }}"
+      loop: "{{ app_folders }}"
+      loop_control:
+        index_var: idx
+        extended: true
+      tags: [basics]
+
+    - name: 5. Nested loop (every environment x every folder)
+      ansible.builtin.file:
+        path: "{{ base_dir }}/envs/{{ item.0 }}/{{ item.1 }}"
+        state: directory
+        mode: "0755"
+      loop: "{{ environments | product(app_folders) | list }}"
+      loop_control:
+        label: "{{ item.0 }}/{{ item.1 }}"
+      tags: [nested]
+
+    - name: 6. Loop with a condition (skip some items)
+      ansible.builtin.debug:
+        msg: "{{ item.name }} can use sudo"
+      loop: "{{ app_users }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when: "'sudo' in item.groups"
+      tags: [users]
+
+    - name: 7. Register the results of a loop
+      ansible.builtin.stat:
+        path: "{{ base_dir }}/{{ item }}"
+      loop: "{{ app_folders }}"
+      register: folder_checks
+      tags: [basics]
+
+    - name: Show what the registered loop looks like
+      ansible.builtin.debug:
+        msg: "{{ folder_checks.results | map(attribute='item') | zip(folder_checks.results | map(attribute='stat.exists')) | list }}"
+      tags: [basics]
+
+    - name: Reset the attempt counter used by the next task
+      ansible.builtin.file:
+        path: "{{ base_dir }}/counter"
+        state: absent
+      tags: [until]
+
+    - name: 8. Retry until a condition is true (until)
+      # Each attempt adds 1 to a counter file. It "succeeds" on attempt 3,
+      # like a service that needs a few seconds to start.
+      ansible.builtin.shell: |
+        n=$(cat {{ base_dir }}/counter 2>/dev/null || echo 0)
+        n=$((n + 1))
+        echo "$n" > {{ base_dir }}/counter
+        echo "$n"
+      register: counter
+      until: counter.stdout | int >= 3
+      retries: 5
+      delay: 1
+      changed_when: true
+      tags: [until]
+
+    - name: Show how many attempts it took
+      ansible.builtin.debug:
+        msg: "Succeeded after {{ counter.attempts }} attempts"
+      tags: [until]
+
+    - name: 9. Repeat a whole group of tasks for each item (include_tasks)
+      ansible.builtin.include_tasks: tasks/setup_environment.yml
+      loop: "{{ environments }}"
+      loop_control:
+        loop_var: env_name           # the included file uses env_name, not item
+      tags: [include]

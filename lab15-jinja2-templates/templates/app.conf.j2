@@ -1,0 +1,24 @@
+# {{ ansible_managed }}
+# Rendered for {{ inventory_hostname }} on {{ ansible_facts['distribution'] }}
+
+[app]
+name = {{ app_name }}
+environment = {{ environment_name | upper }}
+port = {{ app_port }}
+{# This is a Jinja2 comment: it does NOT appear in the output file #}
+{% if environment_name == 'production' %}
+log_level = warning
+workers = {{ ansible_facts['processor_vcpus'] * 2 }}
+{% else %}
+log_level = {{ log_level }}
+workers = 2
+{% endif %}
+debug = {{ debug_mode | lower }}
+
+[database]
+host = {{ db_host | default('localhost') }}
+port = {{ db_port | default(5432) }}
+
+[admins]
+users = {{ admins | join(', ') }}
+count = {{ admins | length }}

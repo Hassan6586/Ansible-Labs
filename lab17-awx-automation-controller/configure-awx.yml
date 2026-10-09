@@ -1,0 +1,64 @@
+---
+# Optional (Step 6): create the same project, inventory and job template as code,
+# using the awx.awx collection instead of clicking through the UI.
+#
+#   ansible-galaxy collection install awx.awx
+#   export CONTROLLER_HOST=http://<minikube-ip>:30080
+#   export CONTROLLER_USERNAME=admin
+#   export CONTROLLER_PASSWORD='<the admin password>'
+#   ansible-playbook configure-awx.yml -e repo_url=https://github.com/<you>/Ansible-Labs.git
+- name: Configure AWX as code
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    repo_url: https://github.com/Hassan6586/Ansible-Labs.git
+    org: Default
+
+  tasks:
+    - name: Create the project (points at the Git repository)
+      awx.awx.project:
+        name: Ansible Labs
+        organization: "{{ org }}"
+        scm_type: git
+        scm_url: "{{ repo_url }}"
+        scm_branch: main
+        scm_update_on_launch: true
+        wait: true
+        state: present
+
+    - name: Create the inventory
+      awx.awx.inventory:
+        name: Lab 17 Inventory
+        organization: "{{ org }}"
+        state: present
+
+    - name: Add a host that runs inside the AWX job container
+      awx.awx.host:
+        name: localhost
+        inventory: Lab 17 Inventory
+        variables:
+          ansible_connection: local
+        state: present
+
+    - name: Create the job template
+      awx.awx.job_template:
+        name: Hello from AWX
+        organization: "{{ org }}"
+        project: Ansible Labs
+        inventory: Lab 17 Inventory
+        playbook: lab17-awx-automation-controller/awx-demo/hello.yml
+        ask_variables_on_launch: true
+        state: present
+
+    - name: Launch it and wait for the result
+      awx.awx.job_launch:
+        job_template: Hello from AWX
+        extra_vars:
+          greeting: "Hello from Ansible code"
+        wait: true
+      register: job
+
+    - name: Show the job result
+      ansible.builtin.debug:
+        msg: "Job {{ job.id }} finished with status: {{ job.status }}"

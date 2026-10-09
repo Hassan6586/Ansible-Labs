@@ -1,0 +1,12 @@
+---
+# Every collection used across the 20 labs. Install them all at once with:
+#   ansible-galaxy collection install -r requirements.yml
+# (The "ansible" package from the PPA already includes most of these.)
+collections:
+  - name: community.general     # Lab 13 (ufw)
+  - name: ansible.posix
+  - name: community.docker      # Lab 08
+  - name: amazon.aws            # Labs 09, 20
+    version: ">=11.2.0"
+  - name: kubernetes.core       # Labs 10, 18
+  - name: awx.awx               # Lab 17 (bonus step)

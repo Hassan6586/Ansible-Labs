@@ -1,0 +1,20 @@
+---
+# Two "locations": an on-premises data centre and a public cloud.
+# In this lab both hosts are your own machine (ansible_connection: local),
+# so you can run everything without real servers. In real life you would
+# replace them with real IPs, or use a cloud inventory plugin (Lab 20).
+all:
+  vars:
+    ansible_connection: local
+    ansible_python_interpreter: /usr/bin/python3
+  children:
+    onpremises:
+      hosts:
+        local-db:
+          private_ip: 192.168.10.20
+          role: database
+    cloud:
+      hosts:
+        cloud-web:
+          private_ip: 10.0.1.15
+          role: web

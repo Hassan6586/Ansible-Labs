@@ -1,0 +1,37 @@
+---
+# Order matters: the database first, then the app that needs it, then the proxy in front.
+- name: Database tier
+  hosts: dbservers
+  become: true
+  roles:
+    - database
+  tags: [database]
+
+- name: Application tier
+  hosts: appservers
+  become: true
+  roles:
+    - application
+  tags: [application]
+
+- name: Web tier
+  hosts: webservers
+  become: true
+  roles:
+    - webserver
+  tags: [webserver]
+
+- name: End-to-end check through the web tier
+  hosts: webservers
+  gather_facts: false
+  tags: [verify]
+  tasks:
+    - name: Request the page through nginx
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:{{ webserver_listen_port | default(8088) }}/"
+        return_content: true
+      register: page
+
+    - name: Show the visit count
+      ansible.builtin.debug:
+        msg: "{{ page.content | regex_search('Visits: \\d+') }}"

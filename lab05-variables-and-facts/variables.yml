@@ -1,0 +1,52 @@
+---
+- name: Where variables come from
+  hosts: local
+  gather_facts: false
+
+  vars:                       # play variables
+    greeting: "Hello from the play"
+    replicas: 2
+
+  vars_files:                 # variables loaded from a file
+    - vars/app.yml
+
+  tasks:
+    - name: A simple variable
+      ansible.builtin.debug:
+        msg: "{{ app_name }} listens on port {{ app_port }}"
+
+    - name: A list (use an index, starting at 0)
+      ansible.builtin.debug:
+        msg: "First feature: {{ app_features[0] }}; all features: {{ app_features | join(', ') }}"
+
+    - name: A dictionary (use dot or bracket notation)
+      ansible.builtin.debug:
+        msg: "Owner: {{ app_owner.name }} from the {{ app_owner['team'] }} team"
+
+    - name: Which greeting wins? (play vars beat group_vars; -e beats everything)
+      ansible.builtin.debug:
+        var: greeting
+
+    - name: Filters change values
+      ansible.builtin.debug:
+        msg:
+          - "Upper case: {{ app_name | upper }}"
+          - "Default for a missing variable: {{ db_host | default('localhost') }}"
+          - "Replicas x 3 = {{ replicas * 3 }}"
+
+    - name: Save a command's result with register
+      ansible.builtin.command: date +%Y-%m-%d
+      register: today
+      changed_when: false
+
+    - name: Use the registered result
+      ansible.builtin.debug:
+        msg: "Today is {{ today.stdout }} (exit code {{ today.rc }})"
+
+    - name: Create a new variable while the play runs
+      ansible.builtin.set_fact:
+        release_tag: "{{ app_name }}-{{ today.stdout }}"
+
+    - name: Show it
+      ansible.builtin.debug:
+        var: release_tag

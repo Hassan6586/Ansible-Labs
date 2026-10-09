@@ -1,0 +1,11 @@
+---
+# The AWX instance itself. The operator watches for this object and builds
+# everything AWX needs (web, task, PostgreSQL) from it.
+apiVersion: awx.ansible.com/v1beta1
+kind: AWX
+metadata:
+  name: awx-demo
+  namespace: awx
+spec:
+  service_type: nodeport
+  nodeport_port: 30080

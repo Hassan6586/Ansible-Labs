@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: ansible-lint (production profile)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install Ansible, ansible-lint and the Python libraries the collections need
+        run: pip install ansible-core ansible-lint boto3 botocore kubernetes
+      - name: Install collections
+        run: ansible-galaxy collection install -r requirements.yml
+      - name: Lint every lab
+        run: ansible-lint
+
+  run-labs:
+    name: Run the labs that need no cloud account
+    runs-on: ubuntu-24.04
+    needs: lint
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - name: Install Ansible
+        run: pip install ansible-core
+      - name: Install collections
+        run: ansible-galaxy collection install -r requirements.yml
+
+      # Each lab is run twice: the second run must report changed=0 (idempotence).
+      - name: Lab 05 - variables and facts
+        working-directory: lab05-variables-and-facts
+        run: ansible-playbook variables.yml && ansible-playbook fact-deployment.yml
+
+      - name: Lab 07 - idempotence
+        working-directory: lab07-idempotence
+        run: |
+          ansible-playbook idempotent_core.yml
+          ansible-playbook idempotent_core.yml | tee second.log
+          grep -q "changed=0" second.log
+
+      - name: Lab 14 - error handling
+        working-directory: lab14-error-handling-and-blocks
+        run: |
+          ansible-playbook resilient-deploy.yml
+          ansible-playbook resilient-deploy.yml -e simulate_failure=false
+          ansible-playbook error-controls.yml
+
+      - name: Lab 15 - Jinja2 templates
+        working-directory: lab15-jinja2-templates
+        run: |
+          ansible-playbook render-templates.yml
+          ansible-playbook render-templates.yml | tee second.log
+          grep -q "changed=0" second.log
+          python3 -m json.tool /tmp/lab15/features.json
+          ansible-playbook filters-playground.yml
+
+      - name: Lab 16 - loops
+        working-directory: lab16-loops-and-advanced-playbooks
+        run: ansible-playbook loops.yml && ansible-playbook cleanup.yml
+
+      - name: Lab 19 - hybrid cloud
+        working-directory: lab19-hybrid-cloud-automation
+        run: |
+          ansible-playbook hybrid-deploy.yml
+          ansible-playbook hybrid-deploy.yml | tee second.log
+          grep -q "changed=0" second.log
+
+      - name: Lab 20 - offline inventory (static + constructed)
+        working-directory: lab20-multi-cloud-inventories
+        run: ansible-inventory -i inventories/01-onprem.yml -i inventories/99-constructed.yml --graph

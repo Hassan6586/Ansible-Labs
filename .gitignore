@@ -1,0 +1,19 @@
+# Never commit secrets
+.vault_pass
+*.vault_pass
+vault_pass.txt
+lab06-ansible-vault/vault_files/database_secrets.yml
+*.pem
+*.key
+
+# Python and Ansible leftovers
+__pycache__/
+*.pyc
+*.retry
+.venv/
+venv/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store

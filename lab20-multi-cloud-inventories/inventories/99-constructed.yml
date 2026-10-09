@@ -1,0 +1,16 @@
+---
+# Runs LAST (99 sorts after the others) and groups hosts from EVERY source
+# by the variables they all share: cloud_provider and env.
+plugin: ansible.builtin.constructed
+strict: false
+
+keyed_groups:
+  - key: cloud_provider
+    prefix: provider
+  - key: env
+    prefix: env
+
+groups:
+  # A group defined by a condition
+  production: env == 'production'
+  cloud: cloud_provider in ['aws', 'azure']

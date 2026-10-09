@@ -1,0 +1,5 @@
+---
+collections:
+  - name: amazon.aws
+  # Only needed for the optional Azure part:
+  # - name: azure.azcollection

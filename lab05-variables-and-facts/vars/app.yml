@@ -1,0 +1,10 @@
+---
+app_name: inventory-service
+app_port: 8080
+app_features:
+  - login
+  - reports
+  - export
+app_owner:
+  name: Hassan
+  team: Platform

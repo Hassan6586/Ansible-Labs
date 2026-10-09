@@ -1,0 +1,67 @@
+---
+# Release-style deployment: every build gets its own folder under releases/,
+# "current" is a symlink to the live one, and only the newest few are kept.
+# Runs without sudo, so the Jenkins user can run it as-is.
+- name: Deploy the web app
+  hosts: web
+  gather_facts: false
+
+  vars:
+    app_name: lab11-webapp
+    app_root: "{{ lookup('ansible.builtin.env', 'HOME') }}/webapp"
+    build_number: manual           # Jenkins passes -e build_number=$BUILD_NUMBER
+    git_commit: unknown            # Jenkins passes -e git_commit=$GIT_COMMIT
+    keep_releases: 3
+    release_dir: "{{ app_root }}/releases/{{ build_number }}"
+
+  tasks:
+    - name: Create the release folder
+      ansible.builtin.file:
+        path: "{{ release_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Render the app files into the release folder
+      ansible.builtin.template:
+        src: "templates/{{ item }}.j2"
+        dest: "{{ release_dir }}/{{ item }}"
+        mode: "0644"
+      loop:
+        - index.html
+        - version.txt
+      when: not ansible_check_mode      # the folder doesn't exist yet during a dry run
+
+    - name: Point "current" at the new release
+      ansible.builtin.file:
+        src: "{{ release_dir }}"
+        dest: "{{ app_root }}/current"
+        state: link
+        force: true
+
+    - name: Find old releases
+      ansible.builtin.find:
+        paths: "{{ app_root }}/releases"
+        file_type: directory
+      register: releases
+
+    - name: Delete old releases (keep the newest {{ keep_releases }})
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ (releases.files | sort(attribute='mtime'))[:-keep_releases] }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+
+    - name: Read back the live version
+      ansible.builtin.slurp:
+        src: "{{ app_root }}/current/version.txt"
+      register: live_version
+      when: not ansible_check_mode
+
+    - name: Fail the pipeline if the wrong build is live
+      ansible.builtin.assert:
+        that:
+          - ("build=" ~ build_number) in (live_version.content | b64decode)
+        success_msg: "Build {{ build_number }} is live"
+        fail_msg: "Expected build {{ build_number }} to be live"
+      when: not ansible_check_mode

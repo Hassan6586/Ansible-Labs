@@ -1,0 +1,20 @@
+---
+- name: Remove everything Lab 16 created
+  hosts: local
+  gather_facts: false
+  tasks:
+    - name: Remove the lab users and their home folders
+      ansible.builtin.user:
+        name: "{{ item }}"
+        state: absent
+        remove: true
+      loop:
+        - appuser1
+        - appuser2
+        - deployer
+      become: true
+
+    - name: Remove the lab folder
+      ansible.builtin.file:
+        path: /tmp/lab16
+        state: absent

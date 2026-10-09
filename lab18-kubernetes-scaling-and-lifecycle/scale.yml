@@ -1,0 +1,24 @@
+---
+# Step 3: ansible-playbook scale.yml                 (5 replicas)
+#         ansible-playbook scale.yml -e replicas=3   (any number)
+- name: Scale the Deployment
+  hosts: local
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  vars:
+    replicas: 5
+
+  tasks:
+    - name: "Scale and wait until all pods are ready: {{ replicas }}"
+      kubernetes.core.k8s_scale:
+        api_version: apps/v1
+        kind: Deployment
+        name: "{{ app_name }}"
+        namespace: "{{ k8s_namespace }}"
+        replicas: "{{ replicas | int }}"
+        wait: true
+        wait_timeout: 120
+
+    - name: Show the result
+      ansible.builtin.include_tasks: tasks/show-status.yml

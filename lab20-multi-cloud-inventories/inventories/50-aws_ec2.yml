@@ -1,0 +1,39 @@
+---
+# Dynamic part: ask AWS which EC2 instances exist right now.
+# The file name MUST end in aws_ec2.yml (or aws_ec2.yaml).
+plugin: amazon.aws.aws_ec2
+
+regions:
+  - us-east-1
+
+# Only running instances that Ansible created (the tags from Lab 09)
+filters:
+  instance-state-name: running
+  tag:ManagedBy: ansible
+
+# Name hosts after their Name tag, or the instance ID if there is none
+hostnames:
+  - tag:Name
+  - instance-id
+
+# Every AWS host also joins the "aws" group
+groups:
+  aws: true
+
+# Make groups from instance data: env_lab, type_t3_micro, aws_region_us_east_1 ...
+keyed_groups:
+  - key: ec2_tags.Environment
+    prefix: env
+  - key: instance_type
+    prefix: type
+  - key: placement.region
+    prefix: aws_region
+
+# Set connection details and the same variable names as the other sources
+compose:
+  ansible_host: public_ip_address | default(private_ip_address)
+  ansible_user: "'ec2-user'"
+  cloud_provider: "'aws'"
+  env: ec2_tags.Environment | default('none')
+  region: placement.region
+  instance_size: instance_type

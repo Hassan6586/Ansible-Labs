@@ -1,0 +1,4 @@
+---
+# Group variables for the "local" group (next to the playbook, so Ansible finds them).
+app_env: development
+greeting: "Hello from group_vars"

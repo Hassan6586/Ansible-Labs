@@ -1,0 +1,21 @@
+---
+# ansible-lint settings for this repository: https://ansible.readthedocs.io/projects/lint/
+profile: production
+
+exclude_paths:
+  - .github/
+  # Kubernetes and kustomize files, not Ansible:
+  - lab10-ansible-with-kubernetes/manifests/
+  - lab17-awx-automation-controller/awx.yml
+  - lab17-awx-automation-controller/operator/
+  # Needs Azure credentials and a collection that isn't installed by default:
+  - lab20-multi-cloud-inventories/optional/
+  # Encrypted or example vault files:
+  - lab06-ansible-vault/vault_files/
+
+skip_list:
+  # Labs keep files short and readable for beginners; key order isn't enforced.
+  - key-order[task]
+
+# Collections are listed in requirements.yml
+offline: false

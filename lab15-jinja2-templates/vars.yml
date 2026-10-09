@@ -1,0 +1,21 @@
+---
+app_name: orders-api
+environment_name: staging          # try: production
+app_port: 8080
+debug_mode: false
+log_level: info
+
+backend_servers:
+  - { name: app1, ip: 10.0.1.11, weight: 3 }
+  - { name: app2, ip: 10.0.1.12, weight: 1 }
+  - { name: app3, ip: 10.0.1.13, weight: 1, backup: true }
+
+feature_flags:
+  new_checkout: true
+  dark_mode: false
+  beta_reports: true
+
+admins:
+  - hassan
+  - ayesha
+  - bilal

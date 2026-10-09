@@ -1,0 +1,12 @@
+---
+# Paste the output of "ansible-vault encrypt_string" into vars like this.
+# The value below is a placeholder: generate your own (see README, Step 6).
+- name: Use a single encrypted variable
+  hosts: local
+  gather_facts: false
+  vars:
+    smtp_password: "REPLACE_ME_WITH_ENCRYPT_STRING_OUTPUT"
+  tasks:
+    - name: Prove the value decrypts (shows only its length)
+      ansible.builtin.debug:
+        msg: "smtp_password has {{ smtp_password | length }} characters"

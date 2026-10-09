@@ -1,0 +1,54 @@
+---
+- name: Install the Python Redis client
+  ansible.builtin.apt:
+    name: python3-redis
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create a system user for the app (no login shell)
+  ansible.builtin.user:
+    name: "{{ application_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Create the app folder
+  ansible.builtin.file:
+    path: "{{ application_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the app code
+  ansible.builtin.copy:
+    src: app.py
+    dest: "{{ application_dir }}/app.py"
+    mode: "0755"
+  notify: Restart app
+
+- name: Install the systemd service
+  ansible.builtin.template:
+    src: app.service.j2
+    dest: "/etc/systemd/system/{{ application_name }}.service"
+    mode: "0644"
+  notify: Restart app
+
+- name: Make sure the app is running and starts on boot
+  ansible.builtin.systemd_service:
+    name: "{{ application_name }}"
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Apply pending restarts now, before we test the app
+  ansible.builtin.meta: flush_handlers
+
+- name: Wait for the app's health check
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ application_port }}/health"
+  register: application_health
+  retries: 10
+  delay: 2
+  until: application_health.status == 200

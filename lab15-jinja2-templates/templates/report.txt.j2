@@ -1,0 +1,10 @@
+{# Whitespace control: "-" removes the newline next to the tag #}
+Backend report for {{ app_name }}
+{{ '=' * 30 }}
+{% for server in backend_servers | sort(attribute='name') -%}
+{{ loop.index }}. {{ '%-6s' | format(server.name) }} {{ server.ip }}{{ '  (backup)' if server.backup | default(false) else '' }}
+{% endfor -%}
+{{ '=' * 30 }}
+Primary servers: {{ backend_servers | rejectattr('backup', 'defined') | map(attribute='name') | join(', ') }}
+Total weight:    {{ backend_servers | map(attribute='weight') | sum }}
+Feature flags on: {{ feature_flags | dict2items | selectattr('value') | length }} of {{ feature_flags | length }}

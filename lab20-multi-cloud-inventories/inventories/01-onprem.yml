@@ -1,0 +1,18 @@
+---
+# Static part: servers in our own data centre.
+# (Both point at your own machine so the lab runs without real servers.)
+all:
+  children:
+    onprem:
+      vars:
+        ansible_connection: local
+        ansible_python_interpreter: /usr/bin/python3
+        cloud_provider: onprem
+        region: karachi-dc1
+      hosts:
+        onprem-db1:
+          env: production
+          instance_size: large
+        onprem-app1:
+          env: staging
+          instance_size: medium

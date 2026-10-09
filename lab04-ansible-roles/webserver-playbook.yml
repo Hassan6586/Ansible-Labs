@@ -1,0 +1,8 @@
+---
+- name: Deploy a web server with a role
+  hosts: local
+  become: true
+  roles:
+    - role: webserver
+      vars:
+        webserver_page_title: "Hello from my first Ansible role"

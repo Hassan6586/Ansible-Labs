@@ -1,0 +1,14 @@
+---
+# Prints the variables each host ends up with. The debug module runs on the
+# control node and never connects, so the example IPs don't need to exist.
+- name: Show the variables each host receives
+  hosts: production
+  gather_facts: false
+  tasks:
+    - name: Print the merged variables
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }} ({{ ansible_host }}) env={{ env_type }}
+          groups={{ group_names | join(',') }}
+          max_clients={{ max_clients | default('n/a') }}
+          db_port={{ db_port | default('n/a') }}

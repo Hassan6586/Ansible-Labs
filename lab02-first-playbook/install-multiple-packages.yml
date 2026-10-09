@@ -1,0 +1,29 @@
+---
+# Installs a list of everyday tools. Needs sudo, so run it with --ask-become-pass (-K).
+- name: Install multiple useful packages
+  hosts: local
+  become: true            # run the tasks as root (sudo)
+
+  vars:
+    packages_to_install:
+      - curl
+      - wget
+      - git
+      - vim
+      - tree
+      - unzip
+
+  tasks:
+    - name: Update the apt package cache (at most once an hour)
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install the packages
+      ansible.builtin.apt:
+        name: "{{ packages_to_install }}"
+        state: present
+
+    - name: Show what we asked for
+      ansible.builtin.debug:
+        msg: "Installed (or already present): {{ packages_to_install | join(', ') }}"

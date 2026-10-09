@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ app_name }}
+  namespace: {{ k8s_namespace }}
+  labels:
+    app: {{ app_name }}
+  annotations:
+    kubernetes.io/change-cause: "Ansible set image nginx:{{ image_tag }}"
+spec:
+  replicas: {{ replicas }}
+  revisionHistoryLimit: 5          # keep 5 old versions so we can roll back
+  selector:
+    matchLabels:
+      app: {{ app_name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1                  # at most 1 extra pod during an update
+      maxUnavailable: 0            # never go below the wanted number of pods
+  template:
+    metadata:
+      labels:
+        app: {{ app_name }}
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:{{ image_tag }}
+          ports:
+            - containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi

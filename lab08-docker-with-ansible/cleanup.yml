@@ -1,0 +1,23 @@
+---
+- name: Remove everything Lab 08 created
+  hosts: local
+  become: true
+  tasks:
+    - name: Remove the container
+      community.docker.docker_container:
+        name: lab-nginx
+        state: absent
+
+    - name: Remove the network
+      community.docker.docker_network:
+        name: lab08-net
+        state: absent
+
+    - name: Remove the image
+      community.docker.docker_image_remove:
+        name: nginx:1.27-alpine
+
+    - name: Remove the website files
+      ansible.builtin.file:
+        path: /opt/lab08
+        state: absent

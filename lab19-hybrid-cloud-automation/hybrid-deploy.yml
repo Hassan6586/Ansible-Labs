@@ -1,0 +1,61 @@
+---
+# One playbook, two environments. Each play targets a group; shared
+# settings come from group_vars/all.yml, the differences from each group's file.
+
+- name: Common baseline for every host (on-prem and cloud)
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Create a folder per host
+      ansible.builtin.file:
+        path: "{{ output_root }}/{{ inventory_hostname }}"
+        state: directory
+        mode: "0755"
+
+    - name: Write a node information file
+      ansible.builtin.template:
+        src: node-info.txt.j2
+        dest: "{{ output_root }}/{{ inventory_hostname }}/node-info.txt"
+        mode: "0644"
+
+- name: On-premises database tier
+  hosts: onpremises
+  gather_facts: false
+  tasks:
+    - name: Configure the database (simulated)
+      ansible.builtin.copy:
+        dest: "{{ output_root }}/{{ inventory_hostname }}/database.conf"
+        content: |
+          listen_address = {{ private_ip }}
+          allowed_clients = {{ groups['cloud'] | map('extract', hostvars, 'private_ip') | join(',') }}
+        mode: "0644"
+
+- name: Cloud web tier
+  hosts: cloud
+  gather_facts: false
+  vars:
+    db_host: "{{ groups['onpremises'][0] }}"
+  tasks:
+    - name: Point the app at the on-prem database (cross-environment lookup)
+      ansible.builtin.template:
+        src: app.env.j2
+        dest: "{{ output_root }}/{{ inventory_hostname }}/app.env"
+        mode: "0644"
+
+    - name: Ask the database host to allow this web server (delegate_to)
+      ansible.builtin.lineinfile:
+        path: "{{ output_root }}/{{ db_host }}/firewall-allow.txt"
+        line: "allow {{ private_ip }} from {{ inventory_hostname }} ({{ location }})"
+        create: true
+        mode: "0644"
+      delegate_to: "{{ db_host }}"
+
+- name: Hybrid summary (runs once, not once per host)
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Print where every host lives
+      ansible.builtin.debug:
+        msg: "{{ item }} ({{ hostvars[item].role }}) -> {{ hostvars[item].location }}"
+      loop: "{{ groups['all'] }}"
+      run_once: true

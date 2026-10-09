@@ -1,0 +1,24 @@
+---
+# Your first playbook: no root needed, safe to run anywhere.
+- name: My first playbook
+  hosts: local            # which inventory group to run on
+  gather_facts: true      # collect system facts before the tasks run
+
+  tasks:
+    - name: Say hello
+      ansible.builtin.debug:
+        msg: "Hello from {{ ansible_facts['hostname'] }}, running {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}"
+
+    - name: Create a working folder
+      ansible.builtin.file:
+        path: /tmp/lab02
+        state: directory
+        mode: "0755"
+
+    - name: Write a file into it
+      ansible.builtin.copy:
+        dest: /tmp/lab02/welcome.txt
+        content: |
+          This file was created by Ansible.
+          Run the playbook again and Ansible will report "ok" instead of "changed".
+        mode: "0644"

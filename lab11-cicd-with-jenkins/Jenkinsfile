@@ -1,0 +1,63 @@
+// Jenkins declarative pipeline for Lab 11.
+// Job type: "Pipeline" -> "Pipeline script from SCM" -> this repository,
+// Script Path: lab11-cicd-with-jenkins/Jenkinsfile
+pipeline {
+    agent any
+
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10'))
+    }
+
+    environment {
+        LAB_DIR = 'lab11-cicd-with-jenkins'
+        ANSIBLE_FORCE_COLOR = 'false'
+    }
+
+    stages {
+        stage('Check tools') {
+            steps {
+                sh 'ansible --version'
+            }
+        }
+
+        stage('Syntax check') {
+            steps {
+                dir(env.LAB_DIR) {
+                    sh 'ansible-playbook playbooks/deploy-webapp.yml --syntax-check'
+                }
+            }
+        }
+
+        stage('Dry run') {
+            steps {
+                dir(env.LAB_DIR) {
+                    sh 'ansible-playbook playbooks/deploy-webapp.yml --check --diff -e build_number=$BUILD_NUMBER -e git_commit=${GIT_COMMIT:-unknown}'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                dir(env.LAB_DIR) {
+                    sh 'ansible-playbook playbooks/deploy-webapp.yml -e build_number=$BUILD_NUMBER -e git_commit=${GIT_COMMIT:-unknown}'
+                }
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                sh 'cat "$HOME/webapp/current/version.txt"'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "Build ${env.BUILD_NUMBER} deployed."
+        }
+        failure {
+            echo "Build ${env.BUILD_NUMBER} failed. The previous release is still live."
+        }
+    }
+}

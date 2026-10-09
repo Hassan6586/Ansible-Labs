@@ -1,0 +1,38 @@
+---
+- name: Remove everything Lab 12 installed
+  hosts: localhost
+  connection: local
+  become: true
+  tasks:
+    - name: Stop and disable the app
+      ansible.builtin.systemd_service:
+        name: visit-counter
+        state: stopped
+        enabled: false
+      failed_when: false
+
+    - name: Remove app files, service and nginx site
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/systemd/system/visit-counter.service
+        - /opt/visit-counter
+        - /etc/nginx/sites-enabled/visit-counter.conf
+        - /etc/nginx/sites-available/visit-counter.conf
+
+    - name: Remove the app user
+      ansible.builtin.user:
+        name: visitapp
+        state: absent
+
+    - name: Remove the packages
+      ansible.builtin.apt:
+        name: [nginx, redis-server, python3-redis]
+        state: absent
+        purge: true
+        autoremove: true
+
+    - name: Reload systemd
+      ansible.builtin.systemd_service:
+        daemon_reload: true

@@ -1,0 +1,69 @@
+---
+- name: Deploy an nginx container with Ansible
+  hosts: local
+  become: true
+
+  vars:
+    app_name: lab-nginx
+    app_image: nginx:1.27-alpine
+    app_port: 8080
+    content_dir: /opt/lab08/html
+    page_heading: "Hello from a container managed by Ansible"
+
+  tasks:
+    - name: Create a folder for the website files
+      ansible.builtin.file:
+        path: "{{ content_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Write the home page
+      ansible.builtin.template:
+        src: index.html.j2
+        dest: "{{ content_dir }}/index.html"
+        mode: "0644"
+
+    - name: Pull the image
+      community.docker.docker_image_pull:
+        name: "{{ app_image }}"
+
+    - name: Create a Docker network for the lab
+      community.docker.docker_network:
+        name: lab08-net
+
+    - name: Run the nginx container
+      community.docker.docker_container:
+        name: "{{ app_name }}"
+        image: "{{ app_image }}"
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
+          - "{{ app_port }}:80"
+        volumes:
+          - "{{ content_dir }}:/usr/share/nginx/html:ro"
+        networks:
+          - name: lab08-net
+        labels:
+          managed-by: ansible
+
+    - name: Wait until the site answers
+      ansible.builtin.uri:
+        url: "http://localhost:{{ app_port }}"
+        return_content: true
+      register: page
+      retries: 10
+      delay: 2
+      until: page.status == 200
+
+    - name: Show the page heading
+      ansible.builtin.debug:
+        msg: "{{ page.content | regex_search('<h1>(.*)</h1>', '\\1') | first }}"
+
+    - name: Read the container's details
+      community.docker.docker_container_info:
+        name: "{{ app_name }}"
+      register: info
+
+    - name: Show status and image
+      ansible.builtin.debug:
+        msg: "{{ app_name }} is {{ info.container.State.Status }} (image {{ info.container.Config.Image }})"

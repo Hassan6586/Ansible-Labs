@@ -1,0 +1,32 @@
+---
+# Undo the lab's changes (useful on a personal laptop or WSL).
+- name: Roll back Lab 13
+  hosts: local
+  become: true
+  tasks:
+    - name: Remove the SSH hardening file
+      ansible.builtin.file:
+        path: /etc/ssh/sshd_config.d/01-hardening.conf
+        state: absent
+      notify: Restart SSH
+
+    - name: Turn the firewall off
+      community.general.ufw:
+        state: disabled
+
+    - name: Remove the fail2ban jail
+      ansible.builtin.file:
+        path: /etc/fail2ban/jail.local
+        state: absent
+      notify: Restart fail2ban
+
+  handlers:
+    - name: Restart SSH
+      ansible.builtin.service:
+        name: ssh
+        state: restarted
+
+    - name: Restart fail2ban
+      ansible.builtin.service:
+        name: fail2ban
+        state: restarted

@@ -1,0 +1,66 @@
+---
+# block / rescue / always: Ansible's version of try / except / finally.
+- name: Resilient deployment with automatic rollback
+  hosts: local
+  gather_facts: false
+
+  vars:
+    app_dir: /tmp/lab14/app
+    new_version: "2.0"
+    simulate_failure: true          # run with -e simulate_failure=false for a successful deploy
+
+  pre_tasks:
+    - name: Make sure the app folder exists
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Start with version 1.0 (only if no version is there yet)
+      ansible.builtin.copy:
+        dest: "{{ app_dir }}/version.txt"
+        content: "version=1.0\n"
+        mode: "0644"
+        force: false
+
+  tasks:
+    - name: Deploy, and roll back if anything fails
+      block:
+        - name: Back up the current version
+          ansible.builtin.copy:
+            src: "{{ app_dir }}/version.txt"
+            dest: "{{ app_dir }}/version.txt.bak"
+            remote_src: true
+            mode: "0644"
+
+        - name: Write the new version
+          ansible.builtin.copy:
+            dest: "{{ app_dir }}/version.txt"
+            content: "version={{ new_version }}\n"
+            mode: "0644"
+
+        - name: Run the post-deploy health check
+          ansible.builtin.command: "{{ '/bin/false' if simulate_failure | bool else '/bin/true' }}"
+          changed_when: false
+
+      rescue:
+        - name: Explain what went wrong
+          ansible.builtin.debug:
+            msg: "Task '{{ ansible_failed_task.name }}' failed, so we roll back."
+
+        - name: Restore the previous version
+          ansible.builtin.copy:
+            src: "{{ app_dir }}/version.txt.bak"
+            dest: "{{ app_dir }}/version.txt"
+            remote_src: true
+            mode: "0644"
+
+      always:
+        - name: Read the live version (runs whether the block worked or not)
+          ansible.builtin.command: cat {{ app_dir }}/version.txt
+          register: live
+          changed_when: false
+
+        - name: Report it
+          ansible.builtin.debug:
+            msg: "Deployment attempt finished. Live: {{ live.stdout }}"

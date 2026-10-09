@@ -1,0 +1,17 @@
+---
+# Step 6: remove everything this lab created.
+- name: Delete the lab namespace (and everything in it)
+  hosts: local
+  gather_facts: false
+  vars_files:
+    - vars.yml
+
+  tasks:
+    - name: Delete the namespace and wait until it is gone
+      kubernetes.core.k8s:
+        api_version: v1
+        kind: Namespace
+        name: "{{ k8s_namespace }}"
+        state: absent
+        wait: true
+        wait_timeout: 180

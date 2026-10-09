@@ -1,0 +1,29 @@
+---
+- name: Install Docker and the Python Docker SDK
+  hosts: local
+  become: true
+  vars:
+    # The user who ran ansible-playbook (so they can use docker without sudo after re-login)
+    docker_user: "{{ lookup('ansible.builtin.env', 'USER') }}"
+  tasks:
+    - name: Install Docker Engine and the Python library Ansible needs
+      ansible.builtin.apt:
+        name:
+          - docker.io
+          - python3-docker
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Make sure Docker is running and starts on boot
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Add your user to the docker group
+      ansible.builtin.user:
+        name: "{{ docker_user }}"
+        groups: docker
+        append: true
+      when: docker_user not in ['', 'root']

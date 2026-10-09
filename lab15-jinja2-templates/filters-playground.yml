@@ -1,0 +1,44 @@
+---
+# Try filters without writing files. Edit and re-run as often as you like.
+- name: Jinja2 filter playground
+  hosts: local
+  gather_facts: false
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Strings
+      ansible.builtin.debug:
+        msg:
+          - "{{ app_name | upper }}"
+          - "{{ app_name | replace('-', '_') }}"
+          - "{{ 'Hello ' ~ app_name }}"
+          - "{{ app_name[:6] }}"
+
+    - name: Lists
+      ansible.builtin.debug:
+        msg:
+          - "{{ admins | sort }}"
+          - "{{ admins | first }} / {{ admins | last }}"
+          - "{{ admins | map('upper') | list }}"
+          - "{{ [3, 1, 2] | max }}"
+
+    - name: Lists of dictionaries
+      ansible.builtin.debug:
+        msg:
+          - "{{ backend_servers | map(attribute='ip') | list }}"
+          - "{{ backend_servers | selectattr('weight', 'gt', 1) | map(attribute='name') | list }}"
+          - "{{ backend_servers | sum(attribute='weight') }}"
+
+    - name: Dictionaries
+      ansible.builtin.debug:
+        msg:
+          - "{{ feature_flags | dict2items }}"
+          - "{{ feature_flags | dict2items | selectattr('value') | map(attribute='key') | list }}"
+
+    - name: Defaults and types
+      ansible.builtin.debug:
+        msg:
+          - "{{ missing_var | default('fallback value') }}"
+          - "{{ '42' | int + 8 }}"
+          - "{{ 'yes' | bool }}"
+          - "{{ {'a': 1} | to_json }}"

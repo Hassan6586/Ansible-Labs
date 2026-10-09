@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ webserver_page_title }}</title>
+</head>
+<body>
+  <h1>{{ webserver_page_title }}</h1>
+  <p>Host: {{ ansible_facts['hostname'] }}</p>
+  <p>OS: {{ ansible_facts['distribution'] }} {{ ansible_facts['distribution_version'] }}</p>
+  <p>Owner: {{ webserver_owner }}</p>
+</body>
+</html>

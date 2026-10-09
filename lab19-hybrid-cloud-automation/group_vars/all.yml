@@ -1,0 +1,4 @@
+---
+company: Acme
+output_root: /tmp/lab19
+ntp_server: time.google.com

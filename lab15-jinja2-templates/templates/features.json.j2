@@ -1,0 +1,6 @@
+{{ {
+  'app': app_name,
+  'environment': environment_name,
+  'enabled_features': feature_flags | dict2items | selectattr('value') | map(attribute='key') | list,
+  'backend_count': backend_servers | length
+} | to_nice_json }}

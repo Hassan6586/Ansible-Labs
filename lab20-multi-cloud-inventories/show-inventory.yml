@@ -1,0 +1,20 @@
+---
+# Prints what Ansible knows about every host, from every source.
+# The debug module runs on your machine, so this never logs in to the servers.
+- name: Show the multi-cloud inventory
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Describe each host
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }}: provider={{ cloud_provider }}, env={{ env }},
+          region={{ region }}, size={{ instance_size }}
+
+- name: Target a group that mixes sources
+  hosts: env_production
+  gather_facts: false
+  tasks:
+    - name: Only production hosts, whatever cloud they are in
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} is production ({{ cloud_provider }})"

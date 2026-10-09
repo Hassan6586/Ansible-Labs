@@ -1,0 +1,12 @@
+---
+- name: Remove everything Lab 10 created
+  hosts: local
+  gather_facts: false
+  tasks:
+    - name: Delete the namespace (this deletes everything inside it)
+      kubernetes.core.k8s:
+        api_version: v1
+        kind: Namespace
+        name: ansible-lab
+        state: absent
+        wait: true

@@ -1,0 +1,15 @@
+# {{ ansible_managed }}
+upstream {{ app_name }} {
+{% for server in backend_servers %}
+    server {{ server.ip }}:{{ app_port }} weight={{ server.weight }}{{ ' backup' if server.backup | default(false) else '' }};  # {{ server.name }}
+{% endfor %}
+}
+
+server {
+    listen 80;
+    server_name {{ app_name }}.{{ environment_name }}.example.com;
+
+    location / {
+        proxy_pass http://{{ app_name }};
+    }
+}

@@ -1,0 +1,13 @@
+# {{ ansible_managed }}
+# SSH hardening settings. sshd uses the FIRST value it finds for most settings,
+# and reads sshd_config.d/*.conf in name order before the main file. The "01-" prefix
+# makes sure these win over files like 50-cloud-init.conf.
+PermitRootLogin no
+MaxAuthTries {{ hardening_ssh_max_auth_tries }}
+X11Forwarding no
+ClientAliveInterval 300
+ClientAliveCountMax 2
+{% if hardening_ssh_disable_passwords %}
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+{% endif %}
